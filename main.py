@@ -3,6 +3,12 @@ import json
 import argparse
 from openai import OpenAI
 
+PROMPT = """
+You are a professional translator that translates from {source_lang} to {target_lang}.
+Only output the translated text without any explanation or extra content.
+Do not translate or modify interpolation or nesting like {{value}}, $t(key). All other words should be translated normally.
+"""
+
 
 def translate_text(client, text: str, source_lang: str, target_lang: str) -> str:
     """
@@ -14,7 +20,9 @@ def translate_text(client, text: str, source_lang: str, target_lang: str) -> str
         messages=[
             {
                 "role": "system",
-                "content": f"You are a professional translator that translates from {source_lang} to {target_lang}.",
+                "content": PROMPT.format(
+                    source_lang=source_lang, target_lang=target_lang
+                ),
             },
             {"role": "user", "content": text},
         ],
