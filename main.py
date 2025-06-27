@@ -8,6 +8,7 @@ def translate_text(client, text: str, source_lang: str, target_lang: str) -> str
     """
     Translate text using DeepSeek API
     """
+    print(f"Translating from {source_lang} to {target_lang}: {text}")
     response = client.chat.completions.create(
         model="deepseek-chat",
         messages=[
@@ -17,8 +18,8 @@ def translate_text(client, text: str, source_lang: str, target_lang: str) -> str
             },
             {"role": "user", "content": text},
         ],
-        temperature=0.3,
-        max_tokens=2000,
+        temperature=0.2,
+        stream=False,
     )
     return response.choices[0].message.content.strip()
 
@@ -49,7 +50,7 @@ def main():
         "--source-lang", required=True, help="Source language code (e.g., en)"
     )
     parser.add_argument(
-        "--target-lang", required=True, help="Target language code (e.g., es)"
+        "--target-lang", required=True, help="Target language code (e.g., zh)"
     )
     parser.add_argument("--source-file", required=True, help="Path to source JSON file")
     parser.add_argument(
@@ -66,7 +67,7 @@ def main():
     # Initialize OpenAI client
     client = OpenAI(
         api_key=api_key,
-        base_url="https://api.deepseek.com/v1",  # DeepSeek API endpoint
+        base_url="https://api.deepseek.com",
     )
 
     # Load source JSON

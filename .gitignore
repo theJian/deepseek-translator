@@ -8,3 +8,4 @@ wheels/
 
 # Virtual environments
 .venv
+test_data_zh.json
