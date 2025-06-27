@@ -9,7 +9,7 @@ def translate_text(client, text: str, source_lang: str, target_lang: str) -> str
     Translate text using DeepSeek API
     """
     response = client.chat.completions.create(
-        model="deepseek-translator",
+        model="deepseek-chat",
         messages=[
             {
                 "role": "system",
