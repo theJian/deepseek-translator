@@ -5,7 +5,7 @@
 
 ### Overview
 
-DeepSeek Translator is a command-line tool that translates i18next JSON files using the DeepSeek's AI.
+DeepSeek Translator is a command-line tool that translates [i18next JSON](https://www.i18next.com/misc/json-format) files using the DeepSeek's AI.
 
 - 🔍 **Smart Key Detection**: Only translates keys missing in target file
 - 🌐 **Language Support**: Translates between any language pair supported by DeepSeek
