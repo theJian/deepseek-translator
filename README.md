@@ -37,6 +37,36 @@ cd deepseek-translator
 export DEEPSEEK_API_TOKEN='your_api_token_here'
 ```
 
+## Configuration
+
+Create i18n.yaml in your project root:
+```yaml
+# Each group defines source + target files
+- en: "locales/en.json"       # First language = source
+  ja: "locales/ja.json"       # Target languages
+  es: "locales/es.json"
+
+- en: "messages/main.json"    # Another group
+  fr: "messages/fr.json"
+  de: "messages/de.json"
+```
+
+## Usage
+
+Without configuration file, you can run the command directly:
+```bash
+uv run main.py \
+  --source-lang en \
+  --target-lang zh \
+  --source-file locales/en.json \
+  --target-file locales/zh.json
+```
+
+With configuration file `i18n.yaml` in the project root, run:
+```bash
+uv run main.py
+```
+
 ## CLI Arguments
 
 | Argument        | Description                                  | Required |

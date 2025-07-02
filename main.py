@@ -2,8 +2,9 @@ import os
 import json
 import argparse
 from openai import OpenAI
-from typing import Dict, Any
 import logging
+import yaml
+from typing import Dict, Any, Optional
 
 # Configure logging
 logging.basicConfig(
@@ -20,6 +21,23 @@ Preserve all keys and structure exactly, only return valid JSON without explanat
 Keys provide context for translation.
 Do not translate or modify interpolation or nesting like {{value}}, $t(key). All other words should be translated normally.
 """
+
+
+def find_config_file(start_dir: str, filename: str = "i18n.yaml") -> Optional[str]:
+    """Search for config file in current and parent directories"""
+    current_dir = os.path.abspath(start_dir)
+    while True:
+        config_path = os.path.join(current_dir, filename)
+        if os.path.isfile(config_path):
+            logger.debug(f"Found config file at: {config_path}")
+            return config_path
+
+        parent_dir = os.path.dirname(current_dir)
+        if parent_dir == current_dir:  # Reached root directory
+            logger.debug("Reached root directory, config not found")
+            return None
+
+        current_dir = parent_dir
 
 
 def count_keys(data: Dict[str, Any]) -> int:
@@ -86,56 +104,34 @@ def translate(client, text: str, prompt: str) -> str:
     return response.choices[0].message.content.strip()
 
 
-def main():
-    parser = argparse.ArgumentParser(
-        description="Translate i18n JSON files using DeepSeek API"
-    )
-    parser.add_argument(
-        "--source-lang", required=True, help="Source language code (e.g., en)"
-    )
-    parser.add_argument(
-        "--target-lang", required=True, help="Target language code (e.g., zh)"
-    )
-    parser.add_argument("--source-file", required=True, help="Path to source JSON file")
-    parser.add_argument(
-        "--target-file", required=True, help="Path to save translated JSON file"
-    )
-    parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
+def translate_file(
+    client: OpenAI,
+    source_lang: str,
+    target_lang: str,
+    source_file: str,
+    target_file: str,
+):
+    """Handle translation for a single file pair"""
+    logger.info(f"Translating {source_lang} -> {target_lang}")
+    logger.info(f"Source: {source_file}")
+    logger.info(f"Target: {target_file}")
 
-    args = parser.parse_args()
-
-    # Set debug level if verbose
-    if args.verbose:
-        logger.setLevel(logging.DEBUG)
-        logger.debug("Verbose logging enabled")
-
-    # Get API key from environment
-    api_key = os.getenv("DEEPSEEK_API_KEY")
-    if not api_key:
-        logger.error("DEEPSEEK_API_TOKEN environment variable not set")
-        raise ValueError("DEEPSEEK_API_KEY environment variable not set")
-
-    # Initialize OpenAI client
-    client = OpenAI(
-        api_key=api_key,
-        base_url="https://api.deepseek.com",
-    )
-
-    # Load source and target files
+    # Load source file
     try:
-        with open(args.source_file, "r", encoding="utf-8") as f:
+        with open(source_file, "r", encoding="utf-8") as f:
             source_data = json.load(f)
-        logger.info(f"Loaded source file: {args.source_file}")
+        logger.info(f"Loaded source file: {source_file}")
     except Exception as e:
         logger.error(f"Error loading source file: {e}")
         raise
 
+    # Load or create target file
     try:
-        with open(args.target_file, "r", encoding="utf-8") as f:
+        with open(target_file, "r", encoding="utf-8") as f:
             target_data = json.load(f)
-        logger.info(f"Loaded target file: {args.target_file}")
+        logger.info(f"Loaded target file: {target_file}")
     except FileNotFoundError:
-        logger.warning(f"Target file not found, creating new: {args.target_file}")
+        logger.warning(f"Target file not found, creating new: {target_file}")
         target_data = {}
     except Exception as e:
         logger.error(f"Error loading target file: {e}")
@@ -150,9 +146,7 @@ def main():
 
     logger.info(f"Found {count_keys(diff_data)} new keys to translate")
 
-    system_prompt = PROMPT.format(
-        source_lang=args.source_lang, target_lang=args.target_lang
-    )
+    system_prompt = PROMPT.format(source_lang=source_lang, target_lang=target_lang)
 
     # Translate data
     try:
@@ -176,15 +170,167 @@ def main():
 
     # Save translated JSON
     try:
-        with open(args.target_file, "w", encoding="utf-8") as f:
+        directory = os.path.dirname(target_file)
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+
+        with open(target_file, "w", encoding="utf-8") as f:
             json.dump(target_data, f, ensure_ascii=False, indent=2)
             f.write("\n")
         print(
-            f"Translation completed. Added {count_keys(translated_diff)} keys in {args.target_file}"
+            f"Translated and added {count_keys(translated_diff)} keys in {target_file}"
         )
     except Exception as e:
         logger.error(f"Error writing target file: {e}")
         raise
+
+
+def process_config(
+    config_path: str,
+    client: OpenAI,
+):
+    """Process all translations defined in YAML config"""
+    try:
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+        logger.info(f"Loaded configuration from {config_path}")
+    except Exception as e:
+        logger.error(f"Error loading config file: {e}")
+        raise
+
+    if config is None:
+        raise ValueError(f"Config file {config_path} is empty or invalid")
+
+    # Process each translation group
+    for i, group in enumerate(config):
+        if not group:
+            continue
+
+        # First language is source
+        source_lang = next(iter(group))
+        source_file = group[source_lang]
+
+        logger.info(f"{'=' * 50}")
+        logger.info(f"Processing group #{i + 1} with source: {source_lang}")
+        logger.info(f"{'=' * 50}")
+
+        # Process each target language
+        for target_lang, target_file in group.items():
+            if target_lang == source_lang:
+                continue  # Skip source language
+
+            translate_file(
+                client=client,
+                source_lang=source_lang,
+                target_lang=target_lang,
+                source_file=source_file,
+                target_file=target_file,
+            )
+
+
+def run_from_config(
+    parser: argparse.ArgumentParser,
+    config_path: Optional[str],
+    client: OpenAI,
+):
+    """Run translation from config file"""
+    if config_path is None:
+        config_path = find_config_file(os.getcwd())
+
+    if config_path:
+        logger.info(f"Using config file: {config_path}")
+        logger.info("Starting translation")
+        process_config(
+            config_path=config_path,
+            client=client,
+        )
+        logger.info("\nTranslation completed!")
+    else:
+        logger.error("No i18n.yaml found in current or parent directories")
+        parser.print_help()
+        exit(1)
+
+
+def run_from_args(
+    parser: argparse.ArgumentParser,
+    client: OpenAI,
+    source_lang: Optional[str],
+    target_lang: Optional[str],
+    source_file: Optional[str],
+    target_file: Optional[str],
+):
+    """Run translation from command line arguments"""
+    if all([source_lang, target_lang, source_file, target_file]):
+        assert source_lang is not None
+        assert target_lang is not None
+        assert source_file is not None
+        assert target_file is not None
+
+        logger.info("Starting translation")
+        translate_file(
+            client=client,
+            source_lang=source_lang,
+            target_lang=target_lang,
+            source_file=source_file,
+            target_file=target_file,
+        )
+        logger.info("\nTranslation completed!")
+    else:
+        logger.error(
+            "If you specify --source-lang, --target-lang, --source-file, and --target-file, all must be provided."
+        )
+        parser.print_help()
+        exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Translate i18n JSON files using DeepSeek API"
+    )
+    parser.add_argument("--config", help="path to custom config file")
+    parser.add_argument("--source-lang", help="Source language code (e.g., en)")
+    parser.add_argument("--target-lang", help="Target language code (e.g., zh)")
+    parser.add_argument("--source-file", help="Path to source JSON file")
+    parser.add_argument("--target-file", help="Path to save translated JSON file")
+    parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
+
+    args = parser.parse_args()
+
+    # Set debug level if verbose
+    if args.verbose:
+        logger.setLevel(logging.DEBUG)
+        logger.debug("Verbose logging enabled")
+
+    # Get API key from environment
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        logger.error("DEEPSEEK_API_KEY environment variable not set")
+        raise ValueError("DEEPSEEK_API_KEY environment variable not set")
+
+    # Initialize OpenAI client
+    client = OpenAI(
+        api_key=api_key,
+        base_url="https://api.deepseek.com",
+    )
+
+    if (
+        any([args.source_lang, args.target_lang, args.source_file, args.target_file])
+        and not args.config
+    ):
+        run_from_args(
+            parser=parser,
+            client=client,
+            source_lang=args.source_lang,
+            target_lang=args.target_lang,
+            source_file=args.source_file,
+            target_file=args.target_file,
+        )
+    else:
+        run_from_config(
+            parser=parser,
+            config_path=args.config,
+            client=client,
+        )
 
 
 if __name__ == "__main__":
