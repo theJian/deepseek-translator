@@ -69,13 +69,14 @@ uv run main.py
 
 ## CLI Arguments
 
-| Argument        | Description                                  | Required |
-|-----------------|----------------------------------------------|----------|
-| `--source-lang` | Source language code (e.g., 'en')            | Yes      |
-| `--target-lang` | Target language code (e.g., 'zh')            | Yes      |
-| `--source-file` | Path to source JSON file                     | Yes      |
-| `--target-file` | Path to target JSON file                     | Yes      |
-| `--verbose`     | Enable detailed debug logging                | No       |
+| Argument        | Description                                  |
+|-----------------|----------------------------------------------|
+| `--config`      | Custom config file path                      |
+| `--source-lang` | Source language code (e.g., 'en')            |
+| `--target-lang` | Target language code (e.g., 'zh')            |
+| `--source-file` | Path to source JSON file                     |
+| `--target-file` | Path to target JSON file                     |
+| `--verbose`     | Enable detailed debug logging                |
 
 
 ## License
