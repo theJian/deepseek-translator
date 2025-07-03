@@ -1,0 +1,24 @@
+name: DeepSeek Translator
+description: GitHub Action to translate i18next JSON using DeepSeek API.
+author: theJian
+
+inputs:
+  deepseek-api-key:
+    description: API key for DeepSeek
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Sync dependencies
+      shell: bash
+      run: uv sync
+
+    - name: Run DeepSeek Translator
+      shell: bash
+      env:
+        DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
+      run: uv run main.py
