@@ -5,7 +5,8 @@
 
 ### Overview
 
-DeepSeek Translator is a command-line tool that translates [i18next JSON](https://www.i18next.com/misc/json-format) files using the DeepSeek's AI.
+DeepSeek Translator is a tool that translates [i18next JSON](https://www.i18next.com/misc/json-format) files using DeepSeek's AI.
+It provides a command-line interface and [GitHub Action](#github-action) to integrate into workflows.
 
 - 🔍 **Smart Key Detection**: Only translates keys missing in target file
 - 🌐 **Language Support**: Translates between any language pair supported by DeepSeek
@@ -48,7 +49,7 @@ Create i18n.yaml in your project root:
 
 ## Usage
 
-Without configuration file, you can run the command directly:
+Without a configuration file, you can run the command directly:
 ```bash
 uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-translator \
   --source-lang en \
@@ -58,7 +59,7 @@ uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-tran
   --target-file locales/zh.json
 ```
 
-With configuration file `i18n.yaml` in the project root, run:
+With the configuration file `i18n.yaml` in the project root, run:
 ```bash
 uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-translator
 ```
@@ -74,6 +75,19 @@ uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-tran
 | `--target-file` | Path to target JSON file                     |
 | `--verbose`     | Enable detailed debug logging                |
 
+
+## GitHub Action
+
+Check [the example](https://github.com/theJian/deepseek-translator-action-demo/)
+
+Create `.github/workflows/i18n.yml`.
+```yaml
+      - uses: actions/checkout@v4
+      - uses: theJian/deepseek-translator@v1
+        with:
+          deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
+      - uses: peter-evans/create-pull-request@v7 # Or commit it using stefanzweifel/git-auto-commit-action
+```
 
 ## License
 MIT
