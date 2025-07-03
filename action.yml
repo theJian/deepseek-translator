@@ -18,4 +18,4 @@ runs:
       env:
         DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
       run: |
-        uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-translator
+        uvx --from git+https://github.com/theJian/deepseek-translator@v1 deepseek-translator
