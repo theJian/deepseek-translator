@@ -13,7 +13,7 @@ DeepSeek Translator is a command-line tool that translates [i18next JSON](https:
 - 🔄 **Merge Capabilities**: Preserves existing translations
 
 ```sh
-uv run main.py \
+uv run deepseek-translator \
   --source-lang en \
   --target-lang zh \
   --source-file locales/en.json \
@@ -55,7 +55,7 @@ Create i18n.yaml in your project root:
 
 Without configuration file, you can run the command directly:
 ```bash
-uv run main.py \
+uv run deepseek-translator \
   --source-lang en \
   --target-lang zh \
   --source-file locales/en.json \
@@ -64,7 +64,7 @@ uv run main.py \
 
 With configuration file `i18n.yaml` in the project root, run:
 ```bash
-uv run main.py
+uv run deepseek-translator
 ```
 
 ## CLI Arguments
