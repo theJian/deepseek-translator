@@ -15,10 +15,14 @@ runs:
 
     - name: Sync dependencies
       shell: bash
-      run: uv sync
+      run: |
+        cd "$GITHUB_ACTION_PATH"
+        uv sync
 
     - name: Run DeepSeek Translator
       shell: bash
       env:
         DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
-      run: uv run main.py
+      run: |
+        cd "$GITHUB_ACTION_PATH"
+        uv run main.py
