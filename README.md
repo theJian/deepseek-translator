@@ -13,7 +13,7 @@ DeepSeek Translator is a command-line tool that translates [i18next JSON](https:
 - 🔄 **Merge Capabilities**: Preserves existing translations
 
 ```sh
-uv run deepseek-translator \
+uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-translator \
   --source-lang en \
   --target-lang zh \
   --source-file locales/en.json \
@@ -26,18 +26,13 @@ uv run deepseek-translator \
 - [DeepSeek API Token](https://platform.deepseek.com/api-keys)
 
 
-## Installation
+## Configuration
 
 ```bash
-# Clone repository
-git clone <repository-url>
-cd deepseek-translator
-
 # Set API token
 export DEEPSEEK_API_KEY='your_api_token_here'
 ```
 
-## Configuration
 
 Create i18n.yaml in your project root:
 ```yaml
@@ -55,7 +50,8 @@ Create i18n.yaml in your project root:
 
 Without configuration file, you can run the command directly:
 ```bash
-uv run deepseek-translator \
+uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-translator \
+  --source-lang en \
   --source-lang en \
   --target-lang zh \
   --source-file locales/en.json \
@@ -64,7 +60,7 @@ uv run deepseek-translator \
 
 With configuration file `i18n.yaml` in the project root, run:
 ```bash
-uv run deepseek-translator
+uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-translator
 ```
 
 ## CLI Arguments
