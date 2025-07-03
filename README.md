@@ -34,7 +34,7 @@ git clone <repository-url>
 cd deepseek-translator
 
 # Set API token
-export DEEPSEEK_API_TOKEN='your_api_token_here'
+export DEEPSEEK_API_KEY='your_api_token_here'
 ```
 
 ## Configuration
