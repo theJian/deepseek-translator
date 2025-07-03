@@ -4,7 +4,7 @@ import argparse
 from openai import OpenAI
 import logging
 import yaml
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 # Configure logging
 logging.basicConfig(
@@ -23,14 +23,17 @@ Do not translate or modify interpolation or nesting like {{value}}, $t(key). All
 """
 
 
-def find_config_file(start_dir: str, filename: str = "i18n.yaml") -> Optional[str]:
+def find_config_file(
+    start_dir: str, filenames: List[str] = ["i18n.yaml", "i18n.yml"]
+) -> Optional[str]:
     """Search for config file in current and parent directories"""
     current_dir = os.path.abspath(start_dir)
     while True:
-        config_path = os.path.join(current_dir, filename)
-        if os.path.isfile(config_path):
-            logger.debug(f"Found config file at: {config_path}")
-            return config_path
+        for filename in filenames:
+            config_path = os.path.join(current_dir, filename)
+            if os.path.isfile(config_path):
+                logger.debug(f"Found config file at: {config_path}")
+                return config_path
 
         parent_dir = os.path.dirname(current_dir)
         if parent_dir == current_dir:  # Reached root directory
