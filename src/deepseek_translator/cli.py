@@ -15,6 +15,8 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+DEFAULT_MODEL = "deepseek-v4-flash"
+
 PROMPT = """
 You are a professional translator that translates the values in the JSON object from {source_lang} to {target_lang}.
 Preserve all keys and structure exactly, only return valid JSON without explanations.
@@ -83,13 +85,13 @@ def deep_merge(target: Dict[str, Any], ext: Dict[str, Any]) -> None:
             target[key] = value
 
 
-def translate(client, text: str, prompt: str) -> str:
+def translate(client: OpenAI, text: str, prompt: str, model: str) -> str:
     """
     Translate text using DeepSeek API
     """
     logger.debug("Sending translation request...")
     response = client.chat.completions.create(
-        model="deepseek-chat",
+        model=model,
         messages=[
             {
                 "role": "system",
@@ -109,6 +111,7 @@ def translate(client, text: str, prompt: str) -> str:
 
 def translate_file(
     client: OpenAI,
+    model: str,
     source_lang: str,
     target_lang: str,
     source_file: str,
@@ -154,7 +157,10 @@ def translate_file(
     # Translate data
     try:
         translated_raw_data = translate(
-            client, json.dumps(diff_data, ensure_ascii=False), system_prompt
+            client,
+            json.dumps(diff_data, ensure_ascii=False),
+            system_prompt,
+            model,
         )
     except Exception as e:
         logger.error(f"API request failed: {e}")
@@ -191,6 +197,7 @@ def translate_file(
 def process_config(
     config_path: str,
     client: OpenAI,
+    model: str,
 ):
     """Process all translations defined in YAML config"""
     try:
@@ -224,6 +231,7 @@ def process_config(
 
             translate_file(
                 client=client,
+                model=model,
                 source_lang=source_lang,
                 target_lang=target_lang,
                 source_file=source_file,
@@ -235,6 +243,7 @@ def run_from_config(
     parser: argparse.ArgumentParser,
     config_path: Optional[str],
     client: OpenAI,
+    model: str,
 ):
     """Run translation from config file"""
     if config_path is None:
@@ -246,6 +255,7 @@ def run_from_config(
         process_config(
             config_path=config_path,
             client=client,
+            model=model,
         )
         logger.info("\nTranslation completed!")
     else:
@@ -257,6 +267,7 @@ def run_from_config(
 def run_from_args(
     parser: argparse.ArgumentParser,
     client: OpenAI,
+    model: str,
     source_lang: Optional[str],
     target_lang: Optional[str],
     source_file: Optional[str],
@@ -272,6 +283,7 @@ def run_from_args(
         logger.info("Starting translation")
         translate_file(
             client=client,
+            model=model,
             source_lang=source_lang,
             target_lang=target_lang,
             source_file=source_file,
@@ -295,6 +307,11 @@ def main():
     parser.add_argument("--target-lang", help="Target language code (e.g., zh)")
     parser.add_argument("--source-file", help="Path to source JSON file")
     parser.add_argument("--target-file", help="Path to save translated JSON file")
+    parser.add_argument(
+        "--model",
+        default=os.getenv("DEEPSEEK_MODEL", DEFAULT_MODEL),
+        help=f"DeepSeek model ID (default: {DEFAULT_MODEL})",
+    )
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
 
     args = parser.parse_args()
@@ -323,6 +340,7 @@ def main():
         run_from_args(
             parser=parser,
             client=client,
+            model=args.model,
             source_lang=args.source_lang,
             target_lang=args.target_lang,
             source_file=args.source_file,
@@ -333,6 +351,7 @@ def main():
             parser=parser,
             config_path=args.config,
             client=client,
+            model=args.model,
         )
 
 

@@ -34,6 +34,9 @@ uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-tran
 export DEEPSEEK_API_KEY='your_api_token_here'
 ```
 
+The translator uses `deepseek-v4-flash` by default. Override it with
+`--model deepseek-v4-pro` or the `DEEPSEEK_MODEL` environment variable.
+
 
 Create i18n.yaml in your project root:
 ```yaml
@@ -73,6 +76,7 @@ uvx --from git+https://github.com/theJian/deepseek-translator@main deepseek-tran
 | `--target-lang` | Target language code (e.g., 'zh')            |
 | `--source-file` | Path to source JSON file                     |
 | `--target-file` | Path to target JSON file                     |
+| `--model`       | DeepSeek model ID (default: `deepseek-v4-flash`) |
 | `--verbose`     | Enable detailed debug logging                |
 
 
