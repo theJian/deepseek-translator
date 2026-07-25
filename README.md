@@ -87,7 +87,7 @@ Check [the example](https://github.com/theJian/deepseek-translator-action-demo/)
 Create `.github/workflows/i18n.yml`.
 ```yaml
       - uses: actions/checkout@v4
-      - uses: theJian/deepseek-translator@v1
+      - uses: theJian/deepseek-translator@v2
         with:
           deepseek-api-key: ${{ secrets.DEEPSEEK_API_KEY }}
       - uses: peter-evans/create-pull-request@v7 # Or commit it using stefanzweifel/git-auto-commit-action
