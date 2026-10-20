@@ -15,7 +15,17 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_MODEL = "deepseek-v4-flash"
+DEFAULT_MODEL = "deepseek-flash"
+PROVIDERS = {
+    "deepseek-": {
+        "base_url": "https://api.deepseek.com",
+        "api_key_env": "DEEPSEEK_API_KEY",
+    },
+    "mimo-": {
+        "base_url": "https://api.xiaomimimo.com/v1",
+        "api_key_env": "MIMO_API_KEY",
+    },
+}
 
 PROMPT = """
 You are a professional translator that translates the values in the JSON object from {source_lang} to {target_lang}.
@@ -87,7 +97,7 @@ def deep_merge(target: Dict[str, Any], ext: Dict[str, Any]) -> None:
 
 def translate(client: OpenAI, text: str, prompt: str, model: str) -> str:
     """
-    Translate text using DeepSeek API
+    Translate text using an OpenAI-compatible provider API
     """
     logger.debug("Sending translation request...")
     response = client.chat.completions.create(
@@ -102,6 +112,8 @@ def translate(client: OpenAI, text: str, prompt: str, model: str) -> str:
         response_format={"type": "json_object"},
         temperature=0.1,
         stream=False,
+        # Both providers enable thinking by default; translation uses non-thinking mode.
+        extra_body={"thinking": {"type": "disabled"}},
     )
     logger.info(
         f"Translation request completed (tokens: {response.usage.total_tokens})"
@@ -300,7 +312,7 @@ def run_from_args(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Translate i18n JSON files using DeepSeek API"
+        description="Translate i18n JSON files using DeepSeek or Xiaomi MiMo"
     )
     parser.add_argument("--config", help="path to custom config file")
     parser.add_argument("--source-lang", help="Source language code (e.g., en)")
@@ -309,8 +321,7 @@ def main():
     parser.add_argument("--target-file", help="Path to save translated JSON file")
     parser.add_argument(
         "--model",
-        default=os.getenv("DEEPSEEK_MODEL", DEFAULT_MODEL),
-        help=f"DeepSeek model ID (default: {DEFAULT_MODEL})",
+        help=f"DeepSeek or MiMo model ID (default: {DEFAULT_MODEL}; env: TRANSLATOR_MODEL)",
     )
     parser.add_argument("--verbose", action="store_true", help="Enable debug logging")
 
@@ -321,16 +332,20 @@ def main():
         logger.setLevel(logging.DEBUG)
         logger.debug("Verbose logging enabled")
 
-    # Get API key from environment
-    api_key = os.getenv("DEEPSEEK_API_KEY")
+    model = args.model or os.getenv("TRANSLATOR_MODEL") or os.getenv("DEEPSEEK_MODEL") or DEFAULT_MODEL
+    provider = next((config for prefix, config in PROVIDERS.items() if model.startswith(prefix)), None)
+    if provider is None:
+        parser.error(f"Unknown model provider: {model}. Use a deepseek- or mimo- model ID.")
+    api_key_name = provider["api_key_env"]
+    api_key = os.getenv(api_key_name)
     if not api_key:
-        logger.error("DEEPSEEK_API_KEY environment variable not set")
-        raise ValueError("DEEPSEEK_API_KEY environment variable not set")
+        logger.error(f"{api_key_name} environment variable not set")
+        raise ValueError(f"{api_key_name} environment variable not set")
 
     # Initialize OpenAI client
     client = OpenAI(
         api_key=api_key,
-        base_url="https://api.deepseek.com",
+        base_url=provider["base_url"],
     )
 
     if (
@@ -340,7 +355,7 @@ def main():
         run_from_args(
             parser=parser,
             client=client,
-            model=args.model,
+            model=model,
             source_lang=args.source_lang,
             target_lang=args.target_lang,
             source_file=args.source_file,
@@ -351,7 +366,7 @@ def main():
             parser=parser,
             config_path=args.config,
             client=client,
-            model=args.model,
+            model=model,
         )
 
 

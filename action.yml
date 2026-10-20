@@ -1,11 +1,16 @@
 name: DeepSeek Translator
-description: GitHub Action to translate i18next JSON using DeepSeek API.
+description: GitHub Action to translate i18next JSON using DeepSeek or Xiaomi MiMo.
 author: theJian
 
 inputs:
+  model:
+    description: DeepSeek or MiMo model ID (default deepseek-flash); determines the API provider
   deepseek-api-key:
     description: API key for DeepSeek
-    required: true
+    required: false
+  mimo-api-key:
+    description: API key for Xiaomi MiMo
+    required: false
 
 runs:
   using: "composite"
@@ -17,5 +22,7 @@ runs:
       shell: bash
       env:
         DEEPSEEK_API_KEY: ${{ inputs.deepseek-api-key }}
+        MIMO_API_KEY: ${{ inputs.mimo-api-key }}
+        TRANSLATOR_MODEL: ${{ inputs.model }}
       run: |
-        uvx --from git+https://github.com/theJian/deepseek-translator@v2 deepseek-translator
+        uv run --project "$GITHUB_ACTION_PATH" deepseek-translator
